@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Main-Class: game.Game
+Class-Path: lib/jme.jar lib/jme-awt.jar lib/jme-editors.jar lib/jme-effects.jar lib/jme-font.jar lib/jme-gamestates.jar lib/jme-model.jar lib/jme-scene.jar lib/jme-sound.jar lib/jme-terrain.jar lib/jinput.jar lib/jme-physics.jar lib/jogg-0.0.5.jar lib/jorbis-0.0.12.jar lib/lwjgl.jar lib/lwjgl_applet.jar lib/lwjgl_fmod3.jar lib/lwjgl_test.jar lib/lwjgl_util.jar lib/lwjgl_util_applet.jar lib/native-mac.jar
+
