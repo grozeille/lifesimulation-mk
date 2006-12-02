@@ -8,7 +8,7 @@
         </fileset>
     </path>
 
-	<property name="releaseDir" location="E:/traveaux/SVN/lifesimulationRelease" />	
+	<property name="releaseDir" location="E:/traveaux/SVN/lifesimulationtrac/download" />	
 	<property name="version" value="beta2" />
 	
 	<target name="compile" description="compilation">
@@ -48,11 +48,11 @@
 	</target>
 	
 	<target name="release" depends="buildExe" description="livre la version">
-		<mkdir dir="${releaseDir}/${version}"/>
-		<copy todir="${releaseDir}/${version}">
+		<zip  destfile="${releaseDir}/${version}/${version}.zip">
 			<fileset dir="./target">
 				<include name="**/*" />
 			</fileset>
-		</copy>	
+		</zip>
+		<mkdir dir="${releaseDir}/${version}"/>
 	</target>
 </project>
