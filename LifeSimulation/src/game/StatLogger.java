@@ -26,24 +26,31 @@ public class StatLogger
         return instance;
     }
     
+    private boolean enable = false;
+    
+    
     private ArrayList<Date> birthList = new ArrayList<Date>();
     
     public void LogBirth()
-    {        
-        birthList.add(Calendar.getInstance().getTime());        
+    {     
+        if(enable)
+            birthList.add(Calendar.getInstance().getTime());        
     }
     
     private HashMap<Date, DeathCause> deathList = new HashMap<Date, DeathCause>();
     
     public void LogDeath(DeathCause cause)
     {
-        deathList.put(Calendar.getInstance().getTime(), cause);
+        if(enable)
+            deathList.put(Calendar.getInstance().getTime(), cause);
     }
     
     private HashMap<Date, Float[]> caracteristic = new HashMap<Date, Float[]>();
     
     public void LogPeople(ArrayList<Spatial> nodes)
     {
+        if(!enable)
+            return;
         // 1-life, 2-prolific, 3-charming, 4-fear, 5-defence,
         // 6-curious, 7-speed, 8-canibal, 9-sensibility, 10-nbPeople
         Float[] carac = new Float[]{0f,0f,0f,0f,0f,0f,0f,0f,0f,0f}; 
@@ -55,15 +62,15 @@ public class StatLogger
                 People p = (People)s;
                 if(p != null)
                 {
-                    carac[0] += p.getLife();
-                    carac[1] += p.getProlific();
-                    carac[2] += p.getCharming();
-                    carac[3] += p.getFear();
-                    carac[4] += p.getDefence();
-                    carac[5] += p.getCurious();
-                    carac[6] += p.getSpeed();
-                    carac[7] += p.getCanibal();
-                    carac[8] += p.getSensibility();
+                    carac[0] += p.getChromosome()[People.GENE_LIFE];
+                    carac[1] += p.getChromosome()[People.GENE_PROLIFIC];
+                    carac[2] += p.getChromosome()[People.GENE_CHARMING];
+                    carac[3] += p.getChromosome()[People.GENE_FEAR];
+                    carac[4] += p.getChromosome()[People.GENE_DEFENCE];
+                    carac[5] += p.getChromosome()[People.GENE_CURIOUS];
+                    carac[6] += p.getChromosome()[People.GENE_SPEED];
+                    carac[7] += p.getChromosome()[People.GENE_CANIBAL];
+                    carac[8] += p.getChromosome()[People.GENE_SENSIBILITY];
                     nbPeople++;
                 }
             }
@@ -78,9 +85,12 @@ public class StatLogger
     
     public void Save()
     {
-        SaveBirthAndDeath();
-        SaveDeathCause();
-        SaveCaracteristic();
+        if(enable)
+        {
+            SaveBirthAndDeath();
+            SaveDeathCause();
+            SaveCaracteristic();
+        }
     }
     
     private void SaveCaracteristic()
@@ -110,11 +120,11 @@ public class StatLogger
         {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }        
+        }
     }
 
     private void SaveDeathCause()
-    {        
+    {
         try
         {
             BufferedWriter bw = new BufferedWriter(new FileWriter("deathCause.csv", false));      
@@ -152,6 +162,8 @@ public class StatLogger
         {
             BufferedWriter bw = new BufferedWriter(new FileWriter("birthAndDeath.csv", false));
             bw.write("Time;Birth;Death\n");
+            if(birthList.size() == 0)
+                return;
             Date date = birthList.get(0);           
             Date now = Calendar.getInstance().getTime();
             Integer index = 10;
@@ -191,5 +203,15 @@ public class StatLogger
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+    public boolean isEnable()
+    {
+        return enable;
+    }
+
+    public void setEnable(boolean enable)
+    {
+        this.enable = enable;
     }
 }

@@ -1,0 +1,58 @@
+<project name="LifeSimulation" default="buildExe" basedir=".">
+	<path id="classpath">
+        <fileset dir="../jme/target">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="../jme/lib">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+	<property name="releaseDir" location="E:/traveaux/SVN/lifesimulationRelease" />	
+	<property name="version" value="beta2" />
+	
+	<target name="compile" description="compilation">
+		<javac source="1.5" target="1.5"
+		       srcdir="./src"
+		       destdir="./bin"
+		       classpathref="classpath"
+			   listfiles="no"
+		       fork="true"
+		       memoryMaximumSize="256m"
+		/>
+	</target>
+
+	<target name="prepare" depends="compile" description="créer le JAR">
+		<copy todir="./target/lib">
+			<fileset dir="../jme/lib">
+				<include name="**/*jar" />
+			</fileset>
+			<fileset dir="../jme/target">
+				<include name="**/*jar" />
+			</fileset>			
+		</copy>
+			
+		<copy todir="./target">
+			<fileset dir="../jme/lib">
+				<include name="**/*dll" />
+			</fileset>
+		</copy>
+
+		<jar jarfile="target/LifeSimulation.jar" basedir="./bin" update="no" compress="false" includes="**/*.class, **/*.jme, **/*.png" />
+	</target>
+	
+	<target name="buildExe" depends="prepare" description="crée un .EXE">		
+		<exec executable="C:/Program Files/JSmooth 0.9.7/jsmoothcmd.exe">
+			<arg file="./JSmoothLifeSimulation.jsmooth"/>
+		</exec>		
+	</target>
+	
+	<target name="release" depends="buildExe" description="livre la version">
+		<mkdir dir="${releaseDir}/${version}"/>
+		<copy todir="${releaseDir}/${version}">
+			<fileset dir="./target">
+				<include name="**/*" />
+			</fileset>
+		</copy>	
+	</target>
+</project>

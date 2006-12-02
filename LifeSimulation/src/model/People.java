@@ -2,13 +2,10 @@ package model;
 
 import java.io.IOException;
 
-import com.jme.bounding.BoundingSphere;
 import com.jme.image.Texture;
 import com.jme.input.InputHandler;
-import com.jme.input.KeyInput;
-import com.jme.input.action.InputAction;
-import com.jme.input.action.InputActionEvent;
 import com.jme.math.Vector3f;
+import com.jme.renderer.ColorRGBA;
 import com.jme.scene.BillboardNode;
 import com.jme.scene.Node;
 import com.jme.scene.shape.Quad;
@@ -22,202 +19,177 @@ import com.jme.util.TextureManager;
 
 public class People extends Node
 {
-    private static final long serialVersionUID = -4433386920425680300L;    
+    private static final long serialVersionUID = -4433386920425680300L;
 
     public InputHandler input;
-    
-    public People(float life, float curious, float speed, float sensibility,
-            float fear, float prolific, float charming, float defence, float canibal) throws IOException
+
+    public People(Float[] chromosome) throws IOException
     {
-        this();
-        this.life = life;
-        this.model.setLocalScale(0.08f * (life/100f));
-        this.getLocalTranslation().set(
-                0.0f, 0.0f, 10f*(this.model.getLocalScale().x/0.04f));
-        this.messageBox.getLocalTranslation().set(
-                0.0f, 10f*(this.model.getLocalScale().x/0.04f), 0.0f);
-        this.curious = curious;
-        this.speed = speed;
-        this.sensibility = sensibility;
-        this.fear = fear;
-        this.prolific = prolific;
-        this.charming = charming;
-        this.defence = defence; 
-        this.canibal = canibal;
-        updateColor();
+        this(chromosome[0], chromosome[1], chromosome[2], 
+             chromosome[3], chromosome[4], chromosome[5],  
+             chromosome[6], chromosome[7], chromosome[8]);
     }
     
-    public People() throws IOException
+    public People(float life, float curious, float speed, float sensibility,
+            float fear, float prolific, float charming, float defence,
+            float canibal) throws IOException
+    {        
+        this.chromosome = new Float[9];
+        this.chromosome[People.GENE_LIFE] = life;                
+        this.chromosome[People.GENE_CURIOUS] = curious;
+        this.chromosome[People.GENE_SPEED] = speed;
+        this.chromosome[People.GENE_SENSIBILITY] = sensibility;
+        this.chromosome[People.GENE_FEAR] = fear;
+        this.chromosome[People.GENE_PROLIFIC] = prolific;
+        this.chromosome[People.GENE_CHARMING] = charming;
+        this.chromosome[People.GENE_DEFENCE] = defence;
+        this.chromosome[People.GENE_CANIBAL] = canibal;
+        
+        buildModel();
+
+        setFeeling(PeopleFeeling.BORN);
+
+        updateColor();     
+
+        input = new InputHandler();
+
+        peopleController = new PeopleController(this);
+        this.addController(peopleController);
+    }
+    
+    private void buildModel() throws IOException
     {
-        super();
-        this.model = ModelManager.getInstance().loadModel("people");
-        //this.model.setLocalTranslation(this.getLocalTranslation());
-        this.model.setLocalScale(0.04f);  
-        BoundingSphere bounding = new BoundingSphere(100.0f, 
-                new Vector3f(this.getLocalTranslation()));     
-        this.model.setModelBound(bounding);
-        this.model.updateModelBound();
-        this.setIsCollidable(true);
+        this.model = ModelManager.getInstance().loadModel("people");        
+        this.model.setLocalScale(0.08f * (this.chromosome[People.GENE_LIFE] / 100f));
         this.attachChild(this.model);
-        
-        BillboardNode message = new BillboardNode("peopleMessage");        
+
+        BillboardNode message = new BillboardNode("peopleMessage");
         messageBox = new Quad("messageBox", 5, 5);
-        texturePassive = TextureManager.loadTexture(
-                getClass().getResource(
-            "/ressources/face-plain.png"),
-            Texture.MM_LINEAR,
-            Texture.FM_LINEAR);
-        textureLove = TextureManager.loadTexture(
-                getClass().getResource(
-                "/ressources/face-kiss.png"),
-                Texture.MM_LINEAR,
+        texturePassive = TextureManager.loadTexture(getClass().getResource(
+                "/ressources/face-plain.png"), Texture.MM_LINEAR,
                 Texture.FM_LINEAR);
-        textureComeBack = TextureManager.loadTexture(
-                getClass().getResource(
-                "/ressources/face-surprise.png"),
-                Texture.MM_LINEAR,
+        textureLove = TextureManager.loadTexture(getClass().getResource(
+                "/ressources/face-kiss.png"), Texture.MM_LINEAR,
                 Texture.FM_LINEAR);
-        textureBorn = TextureManager.loadTexture(
-                getClass().getResource(
-                "/ressources/face-angel.png"),
-                Texture.MM_LINEAR,
+        textureComeBack = TextureManager.loadTexture(getClass().getResource(
+                "/ressources/face-surprise.png"), Texture.MM_LINEAR,
                 Texture.FM_LINEAR);
-        textureDead = TextureManager.loadTexture(
-                getClass().getResource(
-                "/ressources/face-devil-grin.png"),
-                Texture.MM_LINEAR,
+        textureBorn = TextureManager.loadTexture(getClass().getResource(
+                "/ressources/face-angel.png"), Texture.MM_LINEAR,
                 Texture.FM_LINEAR);
-        textureHungry = TextureManager.loadTexture(
-                getClass().getResource(
-                "/ressources/face-grin.png"),
-                Texture.MM_LINEAR,
+        textureDead = TextureManager.loadTexture(getClass().getResource(
+                "/ressources/face-devil-grin.png"), Texture.MM_LINEAR,
                 Texture.FM_LINEAR);
-        textureDefence = TextureManager.loadTexture(
-                getClass().getResource(
-                "/ressources/face-crying.png"),
-                Texture.MM_LINEAR,
+        textureHungry = TextureManager.loadTexture(getClass().getResource(
+                "/ressources/face-grin.png"), Texture.MM_LINEAR,
+                Texture.FM_LINEAR);
+        textureDefence = TextureManager.loadTexture(getClass().getResource(
+                "/ressources/face-crying.png"), Texture.MM_LINEAR,
+                Texture.FM_LINEAR);        
+        textureSick = TextureManager.loadTexture(getClass().getResource(
+                "/ressources/face-sick.png"), Texture.MM_LINEAR,
+                Texture.FM_LINEAR);
+        textureGestation = TextureManager.loadTexture(getClass().getResource(
+                "/ressources/face-laughing.png"), Texture.MM_LINEAR,
                 Texture.FM_LINEAR);
         
-        ts = DisplaySystem.getDisplaySystem().getRenderer().createTextureState();
-        AlphaState as =  DisplaySystem.getDisplaySystem().getRenderer().createAlphaState();
+
+        ts = DisplaySystem.getDisplaySystem().getRenderer()
+                .createTextureState();
+        AlphaState as = DisplaySystem.getDisplaySystem().getRenderer()
+                .createAlphaState();
         ts.setTexture(texturePassive);
-        messageBox.setRenderState(ts);        
+        messageBox.setRenderState(ts);
         messageBox.setRenderState(as);
         as.setBlendEnabled(true);
         messageBox.setLightCombineMode(LightState.OFF);
-        messageBox.getLocalTranslation().set(0.0f, 5.0f, 0.0f);
-        message.attachChild(messageBox);
+        messageBox.getLocalTranslation().set(0.0f,
+                10f * (this.model.getLocalScale().x / 0.04f), 0.0f);
+        message.attachChild(messageBox);        
         this.attachChild(message);
         
-        setFeeling(PeopleFeeling.BORN);
+        this.getLocalTranslation().set(0.0f, 0.0f,
+                10f * (this.model.getLocalScale().x / 0.04f));
         
-        updateColor();
-        
-        /*Arrow arrow = new Arrow( "arrowDirection", 5,0.5f);
-        arrow.lookAt(new Vector3f(0.0f, -1.0f, 0.0f), new Vector3f(0.0f, 0.0f,
-                1.0f));
-        this.attachChild( arrow );
-        arrow = new Arrow( "arrowUp", 5,0.5f);
-        this.attachChild( arrow );*/       
-        
-        
-        this.lookAt(new Vector3f(0.0f, -1.0f, 0.0f), new Vector3f(0.0f, 0.0f,
-                1.0f));
+        this.lookAt(new Vector3f(0.0f, 0.0f, 1.0f), new Vector3f(0.0f, 1.0f,
+                0.0f));
+    }
 
-        input = new InputHandler(); 
-            
+    public People() throws IOException
+    {
+        super();
+        this.chromosome = new Float[]{10f,10f,10f,10f,10f,10f,10f,10f,10f};
+        
+        buildModel();
+
+        setFeeling(PeopleFeeling.BORN);
+
+        updateColor();       
+
+        input = new InputHandler();
+
         peopleController = new PeopleController(this);
         this.addController(peopleController);
-        
-        /*input.addAction(new InputAction()
-        {
-            @Override
-            public void performAction(InputActionEvent evt)
-            {
-                feeling = PeopleFeeling.COMEBACK;
-            }
-
-        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_NUMPAD8,
-                InputHandler.AXIS_NONE, true);*/
     }
-    
+
     private TextureState ts;
-    
+
     private Texture textureHungry;
-    
+
     private Texture texturePassive;
-    
+
     private Texture textureDefence;
-    
+
     private Texture textureLove;
-    
+
     private Texture textureComeBack;
-    
+
     private Texture textureBorn;
-    
+
     private Texture textureDead;
     
+    private Texture textureSick;
+    
+    private Texture textureGestation;
+
     private PeopleController peopleController;
 
     private Node model;
 
-    private Float life = 50.0f;
+    private Float[] chromosome = new Float[9];
 
-    private Float curious = 10.0f;
+    public static Integer GENE_LIFE = 0;
 
-    private Float speed = 50.0f;
+    public static Integer GENE_CURIOUS = 1;
 
-    private Float sensibility = 10.0f;
+    public static Integer GENE_SPEED = 2;
 
-    private Float fear = 10.0f;
+    public static Integer GENE_SENSIBILITY = 3;
 
-    private Float prolific = 50.0f;
-    
-    private Float canibal = 10.0f; 
+    public static Integer GENE_FEAR = 4;
 
-    private Float charming = 10.0f;
+    public static Integer GENE_PROLIFIC = 5;
 
-    private Float defence = 10.0f;
+    public static Integer GENE_CANIBAL = 6;
+
+    public static Integer GENE_CHARMING = 7;
+
+    public static Integer GENE_DEFENCE = 8;
+
+    public Float[] getChromosome()
+    {
+        return this.chromosome;
+    }
 
     private PeopleFeeling feeling = PeopleFeeling.BORN;
-    
+
     private People lovedPeople = null;
 
-    private Quad messageBox; 
-    
-    public Float getCanibal()
-    {
-        return canibal;
-    }
-    
-    public Float getCharming()
-    {
-        return charming;
-    }
-
-    public Float getCurious()
-    {
-        return curious;
-    }
-
-    public Float getDefence()
-    {
-        return defence;
-    }
-
-    public Float getFear()
-    {
-        return fear;
-    }
+    private Quad messageBox;
 
     public PeopleFeeling getFeeling()
     {
         return feeling;
-    }
-
-    public Float getLife()
-    {
-        return life;
     }
 
     public Node getModel()
@@ -225,40 +197,28 @@ public class People extends Node
         return model;
     }
 
-    public Float getProlific()
-    {
-        return prolific;
-    }
-
-    public Float getSensibility()
-    {
-        return sensibility;
-    }
-
-    public Float getSpeed()
-    {
-        return speed;
-    }
-
-
     public void setFeeling(PeopleFeeling feeling)
     {
         this.feeling = feeling;
-        if(this.feeling == PeopleFeeling.PASSIVE)
-        	ts.setTexture(texturePassive);
-        else if(this.feeling == PeopleFeeling.LOVE)
-        	ts.setTexture(textureLove);
-        else if(this.feeling == PeopleFeeling.TIRED)
-        	ts.setTexture(textureComeBack);
-        else if(this.feeling == PeopleFeeling.BORN)
-        	ts.setTexture(textureBorn);
-        else if(this.feeling == PeopleFeeling.DEAD)
-        	ts.setTexture(textureDead);
-        else if(this.feeling == PeopleFeeling.HUNGRY)
+        if (this.feeling == PeopleFeeling.PASSIVE)
+            ts.setTexture(texturePassive);
+        else if (this.feeling == PeopleFeeling.LOVE)
+            ts.setTexture(textureLove);
+        else if (this.feeling == PeopleFeeling.TIRED)
+            ts.setTexture(textureComeBack);
+        else if (this.feeling == PeopleFeeling.BORN)
+            ts.setTexture(textureBorn);
+        else if (this.feeling == PeopleFeeling.DEAD)
+            ts.setTexture(textureDead);
+        else if (this.feeling == PeopleFeeling.HUNGRY)
             ts.setTexture(textureHungry);
-        else if(this.feeling == PeopleFeeling.DEFENCE)
+        else if (this.feeling == PeopleFeeling.DEFENCE)
             ts.setTexture(textureDefence);
-     	this.updateRenderState();
+        else if (this.feeling == PeopleFeeling.SICK)
+            ts.setTexture(textureSick);
+        else if(this.feeling == PeopleFeeling.GESTATION)
+            ts.setTexture(textureGestation);
+        this.updateRenderState();
     }
 
     public People getLovedPeople()
@@ -270,16 +230,44 @@ public class People extends Node
     {
         this.lovedPeople = lovedPeople;
     }
-    
+
     private void updateColor()
     {
-        MaterialState materialState = (MaterialState) this.model.getChild(2).getRenderState(RenderState.RS_MATERIAL);
-        materialState.getDiffuse().r = (life+prolific)/200f - canibal/200f;
-        materialState.getDiffuse().g = (speed+fear+curious)/300f - canibal/200f;
-        materialState.getDiffuse().b = (charming+defence)/200f - canibal/200f;
+        ColorRGBA color = new ColorRGBA();
+        ColorRGBA yellow = new ColorRGBA(0.94f, 0.88f, 0.0f, 1.0f);
         
-        materialState.getAmbient().r = (life+prolific)/200f - canibal/200f;
-        materialState.getAmbient().g = (speed+fear+curious)/300f - canibal/200f;
-        materialState.getAmbient().b = (speed+fear+curious)/300f - canibal/200f;
+        color.r = (chromosome[People.GENE_LIFE] + chromosome[People.GENE_PROLIFIC])
+            / 200f - chromosome[People.GENE_CANIBAL] / 200f;
+        color.b = (chromosome[People.GENE_CHARMING] + chromosome[People.GENE_DEFENCE])
+            / 200f - chromosome[People.GENE_CANIBAL] / 200f;
+        color.g = (chromosome[People.GENE_SPEED]
+                              + chromosome[People.GENE_FEAR] + chromosome[People.GENE_CURIOUS])
+                              / 300f - chromosome[People.GENE_CANIBAL] / 200f;
+        
+        /*for(int cpt = 0; cpt < this.model.getChildren().size(); cpt++)
+        {
+            if(this.model.getChild(cpt) instanceof TriMesh)
+            {
+                TriMesh t = (TriMesh)this.model.getChild(cpt);
+                t.setDefaultColor(color);
+            }
+        }*/
+        
+        MaterialState materialState;
+        // 0 : trompe ?
+        // 1 : les antennes
+        // 2 : le corps
+        // 3 : yeux ?
+        materialState = (MaterialState) this.model.getChild(1)
+            .getRenderState(RenderState.RS_MATERIAL);
+        materialState.setDiffuse(new ColorRGBA(yellow));
+        materialState.setAmbient(new ColorRGBA(yellow));
+        
+        materialState = (MaterialState) this.model.getChild(2)
+            .getRenderState(RenderState.RS_MATERIAL);
+        materialState.setDiffuse(new ColorRGBA(color));
+        materialState.setAmbient(new ColorRGBA(color));
+    
+        this.updateRenderState();
     }
 }

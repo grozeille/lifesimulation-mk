@@ -2,13 +2,12 @@ package model;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.Hashtable;
 
 import com.jme.scene.Node;
+import com.jme.util.export.binary.BinaryExporter;
 import com.jme.util.export.binary.BinaryImporter;
-import com.jmex.model.XMLparser.Converters.MaxToJme;
 
 /**
  * gestionnaire de modèle 3D,
@@ -49,14 +48,13 @@ public class ModelManager
         Node result;
         // charge le modèle associé à l'objet depuis le cache ou le fichier
         if (modelCache.containsKey(name))
-        {            
-            result = (Node) new BinaryImporter().load(modelCache
-                    .get(name));
+        {      
+            result = (Node) new BinaryImporter().load(modelCache.get(name));
         } else
         {
             URL modelUrl = getClass().getResource(
-                    "/ressources/" + name + ".3ds");
-            MaxToJme maxToJme = new MaxToJme();
+                    "/ressources/" + name + ".jme");
+            /*MaxToJme maxToJme = new MaxToJme();
 
             InputStream maxInputStream = modelUrl.openStream();
             ByteArrayOutputStream jmeOutputStream = new ByteArrayOutputStream();
@@ -67,8 +65,14 @@ public class ModelManager
             byte[] modelData = jmeOutputStream.toByteArray();
             jmeOutputStream.close();
 
-            result = (Node) bi.load(modelData);
-
+            result = (Node) bi.load(modelData);*/
+            result = (Node)BinaryImporter.getInstance().load(modelUrl);
+            
+            // sauvegarde ce modèle en mémoire pour en plus aller le chercher sur le disque
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            BinaryExporter.getInstance().save(result, outputStream);
+            byte[] modelData = outputStream.toByteArray();
+            
             modelCache.put(name, modelData);
         }
         

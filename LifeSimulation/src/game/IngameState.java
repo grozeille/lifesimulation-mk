@@ -6,7 +6,6 @@ import java.util.Random;
 import model.People;
 import model.PeopleFeeling;
 
-import com.jme.bounding.BoundingBox;
 import com.jme.image.Texture;
 import com.jme.input.AbsoluteMouse;
 import com.jme.input.InputHandler;
@@ -17,6 +16,7 @@ import com.jme.input.action.InputActionEvent;
 import com.jme.input.action.MouseInputAction;
 import com.jme.intersection.BoundingPickResults;
 import com.jme.intersection.PickResults;
+import com.jme.light.LightNode;
 import com.jme.light.PointLight;
 import com.jme.math.Quaternion;
 import com.jme.math.Ray;
@@ -25,33 +25,33 @@ import com.jme.scene.CameraNode;
 import com.jme.scene.Node;
 import com.jme.scene.Skybox;
 import com.jme.scene.Text;
-import com.jme.scene.shape.Box;
+import com.jme.scene.shape.Sphere;
 import com.jme.scene.state.AlphaState;
 import com.jme.scene.state.LightState;
+import com.jme.scene.state.MaterialState;
 import com.jme.scene.state.TextureState;
 import com.jme.system.DisplaySystem;
 import com.jme.util.TextureManager;
-import com.jmex.game.state.StandardGameState;
+import com.jmex.game.state.CameraGameState;
+import com.jmex.game.state.load.TransitionGameState;
 
-public class IngameState extends StandardGameState
+public class IngameState extends CameraGameState
 {
+    private TransitionGameState transitionState;
+    
     private Boolean gameOver = false;
     public Boolean isGameOver()
     {
         return gameOver;
     }
-        
-    //private Player player;
     
-    //private Float playerFireRate = 0.2f;
+    private boolean loaded = false;
     
-    //private float playerSpeed = 8.0f;   
+    private int nbPeople = 1;
     
     private CameraNode cameraNode;
 
-    private InputHandler input;
-
-    //private OdePhysicsSpace physicsSpace;       
+    private InputHandler input;    
     
     private Skybox skyBox;
     
@@ -69,23 +69,50 @@ public class IngameState extends StandardGameState
     public void cleanup()
     {        
         super.cleanup();
-        //physicsSpace.cleanup();
     }
     
-    public IngameState(String name)
-    {
+    public IngameState(String name, int nbPeople, TransitionGameState transitionState)
+    {        
         super(name);
+        this.nbPeople = nbPeople;
+                
+        // créer la caméra        
+        this.getCamera().setLocation(new Vector3f(0,0,0));
+        this.getCamera().setDirection(new Vector3f(0,1,0));
+        this.getCamera().setLeft(new Vector3f(1,0,0));
+        this.getCamera().setFrustumFar(2000);
+        
+        this.transitionState = transitionState;        
+        buildScene();
+        handleActions();
+        loaded = true;
+        this.rootNode.updateRenderState();
+        this.rootNode.updateGeometricState(0, true);
+        /*new Thread()
+        {
+            @Override
+            public void run()
+            {
+                buildScene();
+                handleActions();
+                loaded = true;
+                super.run();
+            }
+        }.start();*/
+    }
+    
+    private float progress = 0;
+    private String progressMessage = ""; 
+    private LightState ls;
+    
+    private void buildScene()
+    {        
+        float total = nbPeople+6f;
+        this.progress = 1f/total;
+        this.progressMessage = "Loading mouse";
         
         // ce qui permet d'associer des actions du clavier à une action dans le jeux
         input = new InputHandler(); 
-        
-        // crée le "soleil", cad la lumière principale
-        PointLight sun = new PointLight();
-        sun.getLocation().set(0.0f, 0.0f, 500.0f);
-        sun.setEnabled(true);
-        sun.setAttenuate(true);
-        sun.setConstant(2.0f);
-        sun.setShadowCaster(true);                
         
         mouseNode = new AbsoluteMouse("mouse", 
 		                DisplaySystem.getDisplaySystem().getRenderer().getWidth(),
@@ -100,54 +127,59 @@ public class IngameState extends StandardGameState
         
         TextureState ts = DisplaySystem.getDisplaySystem().getRenderer().createTextureState();
         AlphaState as =  DisplaySystem.getDisplaySystem().getRenderer().createAlphaState();
+        as.setBlendEnabled(true);
         ts.setTexture(textureMouse);
         mouseNode.setRenderState(ts);
         mouseNode.setRenderState(as);
         mouseNode.setLightCombineMode(LightState.OFF);     
-        mouseNode.updateRenderState();
-
-        // active la lumière de la scène
-        LightState ls = DisplaySystem.getDisplaySystem().getRenderer()
-                .createLightState();
-        ls.attach(sun);
-        ls.setTwoSidedLighting(true);
-        rootNode.setRenderState(ls);
+        mouseNode.updateRenderState();        
         
         peopleNode = new Node("all people");        
-        
-        // crée "l'espace" soumis aux force (� l'aide de ODE)
-        //physicsSpace = new OdePhysicsSpace();
-        //physicsSpace.setDirectionalGravity(new Vector3f(0.0f,0.0f,-1.0f));
 
         try
         {
             //people1 = new People();
                         
             Random random = new Random();
-            for(int cpt = 0; cpt < 50; cpt++)
-            {                
+            for(int cpt = 0; cpt < nbPeople; cpt++)
+            {      
+                this.progress = ++this.progress/total;
+                this.progressMessage  = "Loading people";
+                
                 float angleZ = random.nextFloat() * (float)(Math.PI*4);
-                int posX = random.nextInt(50)-25;
-                int posY = random.nextInt(50)-25;
+                float angleX = random.nextFloat() * (float)(Math.PI*4);
+                float angleY = random.nextFloat() * (float)(Math.PI*4);
                 
                 People people = new People(
-                        random.nextInt(100),
-                        random.nextInt(100),
-                        random.nextInt(100),
-                        random.nextInt(100),
-                        random.nextInt(100),
-                        random.nextInt(100),
-                        random.nextInt(100),
-                        random.nextInt(100),
-                        random.nextInt(100));
-                peopleNode.attachChild(people);                
+                        random.nextInt(60),
+                        random.nextInt(60),
+                        random.nextInt(60),
+                        random.nextInt(60),
+                        random.nextInt(60),
+                        random.nextInt(60),
+                        random.nextInt(60),
+                        random.nextInt(60),
+                        random.nextInt(60));
+                people.setLocalScale(0);
+                people.setFeeling(PeopleFeeling.BORN);                                
+
+                people.getLocalTranslation().x = 0f;
+                people.getLocalTranslation().y = 200f;
+                people.getLocalTranslation().z = 0f;
+                // cherche la position initial en tournant autour du centre de la terre de X et Z
+                // et cherche aussi la direction initial autour de Y
+                Quaternion q = new Quaternion();
+                q.fromAngles(angleX, 0, angleZ);                
+                q.multLocal(people.getLocalTranslation());
+                people.getLocalRotation().multLocal(q);           
+                /*q.fromAngles(angleX, angleY, angleZ);               
+                people.setLocalTranslation(q.mult(new Vector3f(0,0,60)));
+                people.setLocalRotation(new Quaternion(q));*/                
+                q.fromAngleNormalAxis(angleY, new Vector3f(0,1,0));
+                people.getLocalRotation().multLocal(q);
                 
-                people.getLocalTranslation().x = posX;
-                people.getLocalTranslation().y = posY;
-                Quaternion rot = new Quaternion();  
-                Vector3f axis = new Vector3f(0, 1, 0).normalizeLocal();
-                rot.fromAngleNormalAxis(angleZ, axis);
-                people.getLocalRotation().multLocal(rot);
+                peopleNode.attachChild(people); 
+                
                 people.updateCollisionTree();
             }
             
@@ -157,29 +189,43 @@ public class IngameState extends StandardGameState
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-                
+
+        this.progress = ++this.progress/total;
+        this.progressMessage  = "Loading light";
         
-        // crée le joueur
-        /*player = new Player(physicsSpace, complex);
-        //ennemy1 = new SimpleEnnemy(physicsSpace);
-        rootNode.attachChild(player);
-        physicsSpace.addNode(player);
-        player.setLocalTranslation(new Vector3f(0.0f, -40.0f, 0.0f));
-        */
+        // crée le "soleil", cad la lumière principale
+        PointLight sun = new PointLight();
+        sun.getLocation().set(0.0f, 500.0f, 0.0f);
+        sun.setEnabled(true);
+        sun.setAttenuate(true);
+        sun.setConstant(2.0f);
+        sun.setShadowCaster(true);     
+
+        ls = DisplaySystem.getDisplaySystem().getRenderer()
+                .createLightState();
+        ls.setTwoSidedLighting(true);
+        rootNode.setRenderState(ls);
         
-        // créer la caméra        
-        this.getCamera().setLocation(new Vector3f(0,0,0));
-        this.getCamera().setDirection(new Vector3f(0,1,0));
-        this.getCamera().setLeft(new Vector3f(1,0,0));
+        // crée le noeud caméra et lumière
         cameraNode = new CameraNode("mainCamera", this.getCamera());
-        rootNode.attachChild(cameraNode);
-        cameraNode.getLocalTranslation().set(0.0f, -150.0f, 150.0f);
+        LightNode lightNode = new LightNode("sun", ls);
+        lightNode.setLight(sun);
+        //attache la lumière à la caméra et la caméra à la scène
+        cameraNode.attachChild(lightNode);        
+        rootNode.attachChild(cameraNode);        
+        
+        // déplace la caméra
+        cameraNode.getLocalTranslation().set(0.0f, 500.0f, 0.0f);
         cameraNode.updateWorldVectors();
-        cameraNode.lookAt(new Vector3f(0.0f, 0.01f, -1.0f), new Vector3f(0.0f, 0.0f, 1.0f));
+        cameraNode.lookAt(new Vector3f(0.0f, 0.01f, -1.0f), new Vector3f(0.0f, 1.0f, 0.0f));
         cameraNode.updateWorldVectors();
+                
         
         ray = new Ray(this.getCamera().getLocation(), this.getCamera().getDirection());
 		pickResults = new BoundingPickResults();		
+        
+        this.progress = ++this.progress/total;
+        this.progressMessage  = "Loading HUD";
         
         // petit "HUD"
         playerLifeText = Text.createDefaultTextLabel( "camera info", "" );          
@@ -208,154 +254,105 @@ public class IngameState extends StandardGameState
         helpText3.setLightCombineMode(LightState.OFF);       
         rootNode.attachChild(helpText3);
         
-        // un fond étoilé
-        //buildSkyBox();
+        this.progress = ++this.progress/total;
+        this.progressMessage  = "Loading skybox";
         
-        // construit les murs invisibles pour la gestion des collisions
-        buildInvisibleWall(8, 80, 80, 10);
+        // un fond 
+        buildSkyBox();
+        
+        this.progress = ++this.progress/total;
+        this.progressMessage  = "Loading planet";
+
+        // et la planet
+        buildPlanet();
         
         rootNode.attachChild(peopleNode);
-        //peopleNode.setRenderState(ls);
+        peopleNode.setRenderState(ls);
         
-        // maj de la scène
+        // maj de la scène        
         rootNode.updateGeometricState(0, true);
-        rootNode.updateRenderState();                      
+        rootNode.updateRenderState();
     }
 
+    //private final float[] lightPosition = { 0.8f, 0.8f, 0.8f, 0.0f };
+    
     /**
      * construit les murs invisibles pour la gestion des collisions sur les bords
      * @param height
      * @param length
      * @param width
      */
-	private void buildInvisibleWall(float height, float length, float width, float thick)
+	private void buildPlanet()
 	{
 		Texture textureGrass = TextureManager.loadTexture(
                 getClass().getResource(
-                "/ressources/grass.jpg"),
+                "/ressources/planetautre.png"),
                 Texture.MM_LINEAR,
                 Texture.FM_LINEAR);
         
         TextureState ts = DisplaySystem.getDisplaySystem().getRenderer().createTextureState();
         ts.setTexture(textureGrass);
-		
-		// le "sol"
-        Node node = new Node("floor");
-        rootNode.attachChild( node );
-        node.getLocalTranslation().set(0, 0, -5);        
-        Box visualFloorBox = new Box( node.getName(), 
-                new Vector3f(node.getLocalTranslation()), 
-                length, width, thick);
-        visualFloorBox.setRenderState(ts);
-        node.attachChild( visualFloorBox );
+        ts.setEnabled(true);
         
-        /*Texture all = TextureManager.loadTexture(
-                getClass().getResource(
-            "/ressources/grass.jpg"),
-            Texture.MM_LINEAR,
-            Texture.FM_LINEAR);
-        visualFloorBox.setTextureBuffer(0, all.);*/
+        /*VertexProgramState vp = DisplaySystem.getDisplaySystem().getRenderer().createVertexProgramState();
+        vp.setParameter(lightPosition, 8);
+        vp.load(getClass().getResource(
+                "ressources/celshaderARB.vp"));
+        vp.setEnabled(true);*/
         
-        // le mur du haut
-        boxUpWall = new Node("upWall");
-        rootNode.attachChild( boxUpWall );  
-        visualFloorBox = new Box( boxUpWall.getName(), 
-                new Vector3f(), 
-                length, thick, height);
-        visualFloorBox.setRenderState(ts);
-        boxUpWall.attachChild( visualFloorBox );
-        BoundingBox bounding = new BoundingBox(
-                new Vector3f(), 
-                length, thick, height);
-        boxUpWall.setModelBound(bounding);
-        boxUpWall.updateModelBound();
-        boxUpWall.setIsCollidable(true);
-        boxUpWall.getLocalTranslation().set(0, 
-                width + thick, height/2 + thick/2 - 5);
+        MaterialState ms = DisplaySystem.getDisplaySystem().getRenderer().createMaterialState();
+        //ms.getEmissive().g = 0.001f;
+        ms.getDiffuse().r = 0.2f;
+        ms.getDiffuse().g = 1f;
+        ms.getDiffuse().b = 0.2f;
+        //ms.getAmbient().g = 0.001f;   
+        ms.setEnabled(true);
         
-        // le mur du bas
-        boxBottomWall = new Node("bottomWall" );
-        rootNode.attachChild( boxBottomWall );    
-        visualFloorBox = new Box( boxBottomWall.getName(), 
-                new Vector3f(), 
-                length, thick, height);
-        visualFloorBox.setRenderState(ts);
-        boxBottomWall.attachChild( visualFloorBox );
-        bounding = new BoundingBox(
-                new Vector3f(), 
-                length, thick, height);
-        boxBottomWall.setModelBound(bounding);
-        boxBottomWall.updateModelBound();
-        boxBottomWall.setIsCollidable(true);
-        boxBottomWall.getLocalTranslation().set(0, 
-                -(width + thick), height/2 + thick/2 - 5);   
+        /*CullState cs = DisplaySystem.getDisplaySystem().getRenderer().createCullState();
+        cs.setCullMode(CullState.CS_FRONT);
+        cs.setEnabled(true);
+
+        WireframeState ws = DisplaySystem.getDisplaySystem().getRenderer().createWireframeState();
+        ws.setLineWidth(20.0f);
+        ws.setFace(WireframeState.WS_FRONT);
+        ws.setEnabled(true);*/
         
-        // le mur de gauche        
-        boxLeftWall =  new Node("leftWall" );
-        rootNode.attachChild( boxLeftWall );
-        visualFloorBox = new Box( boxLeftWall.getName(), 
-                new Vector3f(boxLeftWall.getLocalTranslation()), 
-                thick, width, height);
-        visualFloorBox.setRenderState(ts);
-        boxLeftWall.attachChild( visualFloorBox );
-        bounding = new BoundingBox(
-                new Vector3f(), 
-                thick, width, height);
-        boxLeftWall.setModelBound(bounding);
-        boxLeftWall.updateModelBound();
-        boxLeftWall.setIsCollidable(true);
-        boxLeftWall.getLocalTranslation().set(
-        		-(width + thick), 
-        		0, height/2 + thick/2 - 5);
+        // contruit la planète
+        planet = new Node("planet");
+        rootNode.attachChild(planet);
+        Sphere planetSphere = new Sphere("planetSphere", 18, 18, 195);
+        //planetSphere.setRenderState(vp);
+        planetSphere.setRenderState(ts);
+        planetSphere.setRenderState(ls);
+        //planetSphere.setRenderState(ms);        
+        planet.attachChild(planetSphere);
         
-        // le mur de droite        
-        boxRightWall = new Node( "rightWall" );
-        rootNode.attachChild( boxRightWall );
-        visualFloorBox = new Box( boxRightWall.getName(), 
-                new Vector3f(boxRightWall.getLocalTranslation()), 
-                thick, width, height);
-        visualFloorBox.setRenderState(ts);
-        boxRightWall.attachChild( visualFloorBox );
-        bounding = new BoundingBox(
-                new Vector3f(), 
-                thick, width, height);
-        boxRightWall.setModelBound(bounding);
-        boxRightWall.updateModelBound();
-        boxRightWall.setIsCollidable(true);
-        boxRightWall.getLocalTranslation().set(
-                width + thick, 
-                0, height/2 + thick/2 - 5);
+        /*Sphere planetShading = new Sphere("planetSphere", 18, 18, 195);
+        planetShading.setDefaultColor(ColorRGBA.black);
+        planetShading.setRenderState(cs);
+        planetShading.setRenderState(ws);
+        planet.attachChild(planetShading);
         
-        rootNode.updateCollisionTree();
+        planet.setLightCombineMode(LightState.OFF);*/    
+        
+        /*Quaternion q = new Quaternion();
+        q.fromAngleAxis((float)Math.PI/2f, new Vector3f(1,0,0));        
+        planet.getLocalRotation().multLocal(q);*/
         rootNode.updateRenderState();
         
-        // et le plafond
-        /*staticNode = physicsSpace.createStaticNode();
-        rootNode.attachChild( staticNode );
-        box = staticNode.createBox( "celling" );
-        box.getLocalScale().set( thick, width, length );
-        box.getLocalTranslation().set(
-                0, 0, height+thick/2);*/
-        
-        /*visualFloorBox = new Box( box.getName(), 
-                new Vector3f(box.getLocalTranslation()), 
-                box.getLocalScale().x, 
-                box.getLocalScale().y, 
-                box.getLocalScale().z);
-        staticNode.attachChild( visualFloorBox );*/
 	}
 
     private void buildSkyBox() 
     {
         this.skyBox = new Skybox("skybox", 600, 600, 600);
-        Quaternion rot = new Quaternion();
-        Vector3f axis = new Vector3f(1, 0, 0).normalizeLocal();
-        rot.fromAngleNormalAxis((float)Math.PI/4, axis);
-        skyBox.getLocalRotation().multLocal(rot);
+        //Quaternion rot = new Quaternion();
+        //Vector3f axis = new Vector3f(1, 0, 0).normalizeLocal();
+        //rot.fromAngleNormalAxis((float)Math.PI/4, axis);
+        //skyBox.getLocalRotation().multLocal(rot);
         
         Texture all = TextureManager.loadTexture(
                 getClass().getResource(
-            "/ressources/grass.jpg"),
+            "/ressources/nuage.png"),
             Texture.MM_LINEAR,
             Texture.FM_LINEAR);        
  
@@ -365,7 +362,7 @@ public class IngameState extends StandardGameState
         skyBox.setTexture(Skybox.EAST, all);
         skyBox.setTexture(Skybox.UP, all);
         skyBox.setTexture(Skybox.DOWN, all);
-        skyBox.preloadTextures();
+        //skyBox.preloadTextures();
         rootNode.attachChild(skyBox);
     }
     
@@ -377,7 +374,6 @@ public class IngameState extends StandardGameState
 	{       
 		input.addAction(new InputAction()
         {
-            @Override
             public void performAction(InputActionEvent evt)
             {
                 showDebug = !showDebug;
@@ -388,7 +384,6 @@ public class IngameState extends StandardGameState
         
         input.addAction(new InputAction()
         {
-            @Override
             public void performAction(InputActionEvent evt)
             {
                 gameOver = true;
@@ -397,176 +392,141 @@ public class IngameState extends StandardGameState
         }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_ESCAPE,
                 InputHandler.AXIS_NONE, true);
         
+        /////////////////// camera
+        input.addAction(new InputAction()
+        {
+            public void performAction(InputActionEvent evt)
+            {
+                Quaternion q = new Quaternion();
+                Vector3f y = new Vector3f(0,1,0);
+                y = cameraNode.getLocalRotation().mult(y);
+                q.fromAngleAxis(-evt.getTime(), y);
+                Vector3f v = new Vector3f(cameraNode.getLocalTranslation());
+                v = q.mult(v);
+                Vector3f up = new Vector3f(0,1,0);
+                up = cameraNode.getLocalRotation().mult(up);
+                cameraNode.setLocalTranslation(v);                
+                cameraNode.lookAt(new Vector3f(0,0,0), up);
+            }
+
+        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_LEFT,
+                InputHandler.AXIS_NONE, true);        
+        input.addAction(new InputAction()
+        {
+            public void performAction(InputActionEvent evt)
+            {
+                Quaternion q = new Quaternion();
+                Vector3f y = new Vector3f(0,1,0);
+                y = cameraNode.getLocalRotation().mult(y);
+                q.fromAngleAxis(evt.getTime(), y);
+                Vector3f v = new Vector3f(cameraNode.getLocalTranslation());
+                v = q.mult(v);
+                Vector3f up = new Vector3f(0,1,0);
+                up = cameraNode.getLocalRotation().mult(up);
+                cameraNode.setLocalTranslation(v);                
+                cameraNode.lookAt(new Vector3f(0,0,0), up);
+            }
+
+        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_RIGHT,
+                InputHandler.AXIS_NONE, true);
+        input.addAction(new InputAction()
+        {
+            public void performAction(InputActionEvent evt)
+            {
+                Quaternion q = new Quaternion();
+                Vector3f x = new Vector3f(1,0,0);
+                x = cameraNode.getLocalRotation().mult(x);
+                q.fromAngleAxis(evt.getTime(), x);
+                Vector3f v = new Vector3f(cameraNode.getLocalTranslation());
+                v = q.mult(v);
+                Vector3f up = new Vector3f(0,1,0);
+                up = cameraNode.getLocalRotation().mult(up);
+                cameraNode.setLocalTranslation(v);                
+                cameraNode.lookAt(new Vector3f(0,0,0), up);
+            }
+
+        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_UP,
+                InputHandler.AXIS_NONE, true);
+        input.addAction(new InputAction()
+        {
+            public void performAction(InputActionEvent evt)
+            {
+                Quaternion q = new Quaternion();
+                Vector3f x = new Vector3f(1,0,0);
+                x = cameraNode.getLocalRotation().mult(x);
+                q.fromAngleAxis(-evt.getTime(), x);
+                Vector3f v = new Vector3f(cameraNode.getLocalTranslation());
+                v = q.mult(v);
+                Vector3f up = new Vector3f(0,1,0);
+                up = cameraNode.getLocalRotation().mult(up);
+                cameraNode.setLocalTranslation(v);                
+                cameraNode.lookAt(new Vector3f(0,0,0), up);
+            }
+
+        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_DOWN,
+                InputHandler.AXIS_NONE, true);
+        
+        input.addAction(new InputAction()
+        {
+            public void performAction(InputActionEvent evt)
+            {
+                // calcul de combien diviser le vecteur pour obtenir un pas de
+                // 1 * evt.getTime()
+                float length = cameraNode.getLocalTranslation().length();
+                float factor = (length - evt.getTime()*100)/length;
+                cameraNode.getLocalTranslation().multLocal(factor);
+            }
+
+        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_ADD,
+                InputHandler.AXIS_NONE, true);
+        
+        input.addAction(new InputAction()
+        {
+            public void performAction(InputActionEvent evt)
+            {
+                // calcul de combien diviser le vecteur pour obtenir un pas de
+                // 1 * evt.getTime()
+                float length = cameraNode.getLocalTranslation().length();
+                float factor = (length - evt.getTime()*100)/length;
+                cameraNode.getLocalTranslation().divideLocal(factor);
+            }
+
+        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_SUBTRACT,
+                InputHandler.AXIS_NONE, true);
+        
+        
         //input.addAction(new MousePick(getCamera(), rootNode, helpText3));
         input.addAction(new MouseInputAction()
         {
-            @Override
             public void performAction(InputActionEvent evt)
             {
             	 if( MouseInput.get().isButtonDown(0))
             	 {
+                     Vector3f x = new Vector3f(mouseNode.getLocalTranslation().x-DisplaySystem.getDisplaySystem().getRenderer().getWidth()/2f,0,0);
+                     Vector3f y = new Vector3f(0,mouseNode.getLocalTranslation().y-DisplaySystem.getDisplaySystem().getRenderer().getHeight()/2f,0);
+                     x = cameraNode.getLocalRotation().mult(x);
+                     y = cameraNode.getLocalRotation().mult(y);
                      /*Vector3f location = new Vector3f(cameraNode.getLocalTranslation());
                      location.z += mouseNode.getLocalTranslation().y;
                      location.x += mouseNode.getLocalTranslation().x;
                      ray = new Ray(location, getCamera().getDirection());*/
                      ray = new Ray(
-                             getCamera().getLocation(),
-                             getCamera().getDirection()); // camera direction is already normalized
+                             cameraNode.getLocalTranslation().add(x).add(y),
+                             cameraNode.getLocalTranslation().negate()); // camera direction is already normalized                     
+                     pickResults.setCheckDistance(true);
+                     rootNode.findPick(ray,pickResults);
             	 }
             }
 
         });
-        
-        /*// je joueur vire à gauche
-        input.addAction(new InputAction()
-        {
-            @Override
-            public void performAction(InputActionEvent evt)
-            {
-                player.addForce(new Vector3f(-playerSpeed, 0.0f, 0.0f));
-            }
 
-        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_LEFT,
-                InputHandler.AXIS_NONE, true);
-        
-        // le joueur vire à droite
-        input.addAction(new InputAction()
-        {
-            @Override
-            public void performAction(InputActionEvent evt)
-            {
-                player.addForce(new Vector3f(playerSpeed, 0.0f, 0.0f));
-            }
-
-        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_RIGHT,
-                InputHandler.AXIS_NONE, true);
-        
-        // le joueur accelère
-        input.addAction(new InputAction()
-        {
-            @Override
-            public void performAction(InputActionEvent evt)
-            {
-                player.addForce(new Vector3f(0.0f, playerSpeed, 0.0f));
-            }
-
-        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_UP,
-                InputHandler.AXIS_NONE, true);
-        
-        // le joueur freine
-        input.addAction(new InputAction()
-        {
-            @Override
-            public void performAction(InputActionEvent evt)
-            {
-                player.addForce(new Vector3f(0.0f, -playerSpeed, 0.0f));
-            }
-
-        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_DOWN,
-                InputHandler.AXIS_NONE, true);
-
-        // le joueur viens de percuter quelque chose
-        SyntheticButton collisionPlayerEventHandler = player
-                .getCollisionEventHandler();
-        input.addAction(new InputAction()
-        {
-
-            @Override
-            public void performAction(InputActionEvent evt)
-            {
-                // si il a percuté un ennemi (ou ce dernier le percute)
-                // et que le "countdown" est terminé (espèce de bouclier temporaire on peut dire)                
-                final ContactInfo contactInfo = ( (ContactInfo) evt.getTriggerData() );
-                if((contactInfo.getNode1() instanceof SimpleEnnemy || 
-                    contactInfo.getNode2() instanceof SimpleEnnemy) && shieldCountdown <= 0)
-                {
-                    player.decreaseLife(1.0f);
-                    shieldCountdown = 1;
-                }                
-            }
-        }, collisionPlayerEventHandler.getDeviceName(), collisionPlayerEventHandler
-                .getIndex(), InputHandler.AXIS_NONE, false);
-        
-        // l'ennemy touche quelque chose... si ce n'est pas une rocket, ça ne lui fait rien :)
-        /*SyntheticButton collisionEnnemyEventHandler = ennemy1
-            .getCollisionEventHandler();
-        input.addAction(new InputAction()
-        {        
-            @Override
-            public void performAction(InputActionEvent evt)
-            {               
-                final ContactInfo contactInfo = ( (ContactInfo) evt.getTriggerData() );
-                if((contactInfo.getNode1() instanceof Rocket || 
-                   contactInfo.getNode2() instanceof Rocket) && ennemyShieldCountdown <= 0)
-                {
-                    ennemy1.decreaseLife(1.0f);
-                    ennemyShieldCountdown = 0.2f;           
-                }                
-            }
-        }, collisionEnnemyEventHandler.getDeviceName(), collisionEnnemyEventHandler
-                .getIndex(), InputHandler.AXIS_NONE, false);*/
-        
-        /*input.addAction(new InputAction()
-        {
-            @Override
-            public void performAction(InputActionEvent evt)
-            {
-                if(rocketCountDown <= 0)
-                {
-                    // création d'un missile
-                    final Rocket rocket = new Rocket(physicsSpace, complex);                
-                    physicsSpace.addNode(rocket);
-                    rootNode.attachChild(rocket);
-                    rocketList.add(rocket);
-                    rocket.setLocalTranslation(new Vector3f(
-                            player.getLocalTranslation().x, 
-                            player.getLocalTranslation().y+5, // juste devant le joeur
-                            player.getLocalTranslation().z));  
-                    rocket.addForce(new Vector3f(0.0f, 100.0f, 0.0f));
-                    rocketCountDown = playerFireRate;
-                    rootNode.updateGeometricState(0, true);
-                    rootNode.updateRenderState();
-                    SyntheticButton collisionRocketEventHandler = 
-                        rocket.getCollisionEventHandler();
-                    input.addAction(new InputAction()
-                    {        
-                        @Override
-                        public void performAction(InputActionEvent evt)
-                        {           
-                            // détermine l'autre
-                            final ContactInfo contactInfo = ( (ContactInfo) evt.getTriggerData() );
-                            Node other = null;
-                            if(contactInfo.getNode1().equals(rocket))
-                                other = contactInfo.getNode2();
-                            else
-                                other = contactInfo.getNode1();
-                            if(!(other instanceof Rocket) && rocketList.contains(rocket))
-                            {
-                                rootNode.detachChild(rocket);
-                                rocketList.remove(rocket);
-                                rocket.clearForce();
-                                rocket.clearDynamics();
-                                rocket.setActive(false);
-                            }
-                        }
-                    }, collisionRocketEventHandler.getDeviceName(), collisionRocketEventHandler
-                            .getIndex(), InputHandler.AXIS_NONE, false);
-                    
-                }
-            }
-
-        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_SPACE,
-                InputHandler.AXIS_NONE, true);*/
 	}
     
     private float elapsedTime = 0;
-    private float elapsedFrame = 0;
+    private float elapsedFrame = 0;    
     private float logTime = 0;
 
-    private Node boxUpWall;
-    private Node boxBottomWall;
-    private Node boxLeftWall;
-    private Node boxRightWall;
+    private Node planet;
 
     private float stateTime = 0;
     //private int numberPeople = 0;
@@ -577,12 +537,28 @@ public class IngameState extends StandardGameState
 
 	private PickResults pickResults;
     
+    private float elapsedVirusTime = 0;
+
+    static private float fps = 100;
+    static public float getFps()
+    {
+        return fps;
+    }
+       
     @Override
     protected void stateUpdate(float tpf)
     {
+        if(!loaded)
+        {
+            transitionState.setProgress(this.progress, this.progressMessage);                      
+            return;
+        }
+        transitionState.setActive(false);
+        
         input.update(tpf); 
         stateTime += tpf;
         elapsedTime += tpf;
+        elapsedVirusTime += tpf;
         logTime += tpf;
         
         if(logTime >= 10.0f)
@@ -594,37 +570,69 @@ public class IngameState extends StandardGameState
         if(stateTime < 0.5f)
             return;        
         
-        float fps = ((Float)(elapsedFrame/stateTime)).intValue();
-        
+        IngameState.fps = ((Float)(elapsedFrame/stateTime)).intValue();
+        if(elapsedTime < 6)
+            IngameState.fps = 100;
         elapsedFrame = 0.0f;
         stateTime = 0.0f;
                 
-        /*pickResults.clear();
-        pickResults.setCheckDistance(true);
-        rootNode.findPick(ray,pickResults);
         
-        if(pickResults.getNumber() > 0)
+        
+        /*if(pickResults.getNumber() > 0)
         {
         	Node source = pickResults.getPickData(0)
                     .getTargetMesh().getParentGeom().getParent().getParent();
         	if(source instanceof People)
         	{
         		People selected = (People)source;
-        		helpText3.print("Selected => life="+selected.getLife()+
-        				" speed="+selected.getSpeed()+" prolific="+selected.getProlific());
+        		helpText3.print("Selected => life="+selected.getChromosome()[People.GENE_LIFE]+
+        				" speed="+selected.getChromosome()[People.GENE_SPEED]+
+                        " prolific="+selected.getChromosome()[People.GENE_PROLIFIC]);
         	}
-        }*/
+            else
+                helpText3.print("");
+        }
+        else
+            helpText3.print("");
+        pickResults.clear();*/
         
         // maladie HAHAHA!
-        if(peopleNode.getChildren().size() > 70 && fps < 30)
+        /*if(fps < 20f && elapsedVirusTime > 2f)
         {
+            int toBeKilled = 1;
             Random random = new Random();
-            for(int cpt = 0; cpt < 10; cpt++)
+            
+            if(fps < 7 && peopleNode.getChildren().size() > 80)
             {
-                ((People)peopleNode.getChild(random.nextInt(69))).setFeeling(PeopleFeeling.DEAD);
-                StatLogger.GetInstance().LogDeath(DeathCause.disease);
+                toBeKilled = 60;
+                for(int cpt = 0; cpt < toBeKilled; cpt++)
+                {
+                    ((People)peopleNode.getChild(random.nextInt(nbPeople-1))).setFeeling(PeopleFeeling.DEAD);
+                    StatLogger.GetInstance().LogDeath(DeathCause.disease);
+                } 
             }
-        }
+            else
+            {
+                if(peopleNode.getChildren().size() > 80)
+                    toBeKilled = 5;
+                else if(peopleNode.getChildren().size() > 90)
+                    toBeKilled = 10;
+                else if(peopleNode.getChildren().size() > 100)
+                    toBeKilled = 30;
+                else if(peopleNode.getChildren().size() > 110)
+                    toBeKilled = 60;            
+                else if(peopleNode.getChildren().size() > 120)
+                    toBeKilled = 100;
+                else if(peopleNode.getChildren().size() > 150)
+                    toBeKilled = 130;
+                
+                for(int cpt = 0; cpt < toBeKilled; cpt++)
+                {
+                    ((People)peopleNode.getChild(random.nextInt(nbPeople-1))).setFeeling(PeopleFeeling.SICK);                
+                }
+            }
+            elapsedVirusTime = 0;
+        }*/        
         
         /*for(Spatial s : peopleNode.getChildren())
         {     
@@ -640,9 +648,9 @@ public class IngameState extends StandardGameState
                 }
             }
         }*/
-        helpText1.print("nb individu : "+peopleNode.getChildren().size());
+        helpText1.print("nb individu : "+peopleNode.getQuantity());
         helpText2.print("elapsed time : "+(int)elapsedTime/60+"min "+(int)elapsedTime%60+"sec");
-        helpText3.print("");
+        //helpText3.print("");
         fpsText.print("fps : "+fps);                     
         
         super.stateUpdate(tpf);
@@ -652,7 +660,6 @@ public class IngameState extends StandardGameState
     @Override
     protected void onActivate()
     {
-        handleActions();
         super.onActivate();
     }
     
@@ -676,5 +683,19 @@ public class IngameState extends StandardGameState
         super.stateRender(tpf);        
     }
 
+    public boolean isLoaded()
+    {
+        return loaded;
+    }
+
+    public float getProgress()
+    {
+        return progress;
+    }
+
+    public String getProgressMessage()
+    {
+        return progressMessage;
+    }
 
 }

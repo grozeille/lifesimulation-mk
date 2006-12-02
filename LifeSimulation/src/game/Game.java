@@ -10,10 +10,12 @@ import com.jme.system.DisplaySystem;
 import com.jme.system.JmeException;
 import com.jme.util.LoggingSystem;
 import com.jmex.game.state.GameStateManager;
+import com.jmex.game.state.load.TransitionGameState;
 
 public class Game extends VariableTimestepGame
 {
     private IngameState ingameState;
+    private MenuState menuState;    
     
     /**
      * @param args
@@ -41,10 +43,10 @@ public class Game extends VariableTimestepGame
 
     @Override
     protected void initGame()
-    {               
-        ingameState = new IngameState("ingame");
-        GameStateManager.getInstance().attachChild(ingameState);
-        ingameState.setActive(true);
+    {         
+        menuState = new MenuState("mnue");         
+        GameStateManager.getInstance().attachChild(menuState);        
+        menuState.setActive(true);        
     }
 
     @Override
@@ -58,12 +60,12 @@ public class Game extends VariableTimestepGame
                     properties.getDepth(), properties.getFreq(), properties
                             .getFullscreen());
             display.getRenderer().setBackgroundColor(ColorRGBA.black);
-            display.setTitle("SimpleSpaceQuake");            
+            display.setTitle("Life simulation");            
         } catch (JmeException e)
         {
             e.printStackTrace();
             throw new RuntimeException(
-                    "Erreur lors de l'initialisation du syst�me", e);
+                    "Erreur lors de l'initialisation du systéme", e);
         }
         
         GameStateManager.create();
@@ -84,9 +86,28 @@ public class Game extends VariableTimestepGame
     @Override
     protected void update(float deltaTime)
     {       
-        // si le menu demande de quitter, on quite
-        if(ingameState.isGameOver())
+        if(menuState.isActive() && menuState.isStartGame())
+        {                       
+            TransitionGameState transitionState = new TransitionGameState(null);
+            GameStateManager.getInstance().attachChild(transitionState);                        
+            ingameState = new IngameState("ingame", menuState.getNbPeople(), transitionState);
+            GameStateManager.getInstance().attachChild(ingameState);
+            menuState.setActive(false);
+            //transitionState.setActive(true);
+            ingameState.setActive(true);
+        }
+        else if(menuState.isActive() && menuState.isQuitGame())
+        {
             finish();
+        }
+        // si le menu demande de quitter, on quite
+        else if(ingameState != null && ingameState.isActive() && ingameState.isGameOver())
+        {
+            ingameState.setActive(false);
+            GameStateManager.getInstance().detachChild(ingameState);
+            ingameState = null;
+            menuState.setActive(true);
+        }
         else
         {
             GameStateManager.getInstance().update(deltaTime);
