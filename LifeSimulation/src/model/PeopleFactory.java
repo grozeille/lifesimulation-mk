@@ -74,7 +74,7 @@ public class PeopleFactory extends Thread
             
             float elapsedTime = 0;
             float maxTime = PeopleFactory.GESTATION_COUNTDOWN_MAX*
-                100*child.getChromosome()[People.GENE_LIFE];
+                20*child.getChromosome()[People.GENE_LIFE];
             // le temps de gestation dépend des points de vie de l'enfant            
             while(elapsedTime < maxTime)
             {

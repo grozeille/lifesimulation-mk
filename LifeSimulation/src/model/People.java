@@ -2,6 +2,7 @@ package model;
 
 import java.io.IOException;
 
+import com.jme.bounding.BoundingSphere;
 import com.jme.image.Texture;
 import com.jme.input.InputHandler;
 import com.jme.math.Vector3f;
@@ -61,7 +62,13 @@ public class People extends Node
     {
         this.model = ModelManager.getInstance().loadModel("people");        
         this.model.setLocalScale(0.08f * (this.chromosome[People.GENE_LIFE] / 100f));
-        this.attachChild(this.model);
+        this.attachChild(this.model);       
+        BoundingSphere bounding = new BoundingSphere(100.0f, new Vector3f(this
+                .getLocalTranslation()));
+        this.model.setModelBound(bounding);
+        this.model.updateModelBound();
+        this.setIsCollidable(true);
+        this.updateCollisionTree();
 
         BillboardNode message = new BillboardNode("peopleMessage");
         messageBox = new Quad("messageBox", 5, 5);
@@ -236,6 +243,8 @@ public class People extends Node
         ColorRGBA color = new ColorRGBA();
         ColorRGBA yellow = new ColorRGBA(0.94f, 0.88f, 0.0f, 1.0f);
         
+        if(!selected)
+        {
         color.r = (chromosome[People.GENE_LIFE] + chromosome[People.GENE_PROLIFIC])
             / 200f - chromosome[People.GENE_CANIBAL] / 200f;
         color.b = (chromosome[People.GENE_CHARMING] + chromosome[People.GENE_DEFENCE])
@@ -243,7 +252,13 @@ public class People extends Node
         color.g = (chromosome[People.GENE_SPEED]
                               + chromosome[People.GENE_FEAR] + chromosome[People.GENE_CURIOUS])
                               / 300f - chromosome[People.GENE_CANIBAL] / 200f;
-        
+        }
+        else
+        {
+            color.r = 1f;
+            color.b = 0f;
+            color.g = 0f;
+        }
         /*for(int cpt = 0; cpt < this.model.getChildren().size(); cpt++)
         {
             if(this.model.getChild(cpt) instanceof TriMesh)
@@ -269,5 +284,16 @@ public class People extends Node
         materialState.setAmbient(new ColorRGBA(color));
     
         this.updateRenderState();
+    }
+    
+    private boolean selected = false;
+    public boolean isSelected()
+    {
+        return selected;
+    }
+    public void setSelected(boolean selected)
+    {
+        this.selected = selected;
+        updateColor();
     }
 }

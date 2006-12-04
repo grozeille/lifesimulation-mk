@@ -66,7 +66,7 @@ public class PeopleController extends Controller
     public PeopleController(final People people)
     {
         this.people = people;
-        realLife = people.getChromosome()[People.GENE_LIFE]*10;
+        realLife = people.getChromosome()[People.GENE_LIFE]*3;
         rot = new Quaternion();  
         axis = new Vector3f(people.getLocalTranslation()).normalizeLocal();
         //collisionResults = new BoundingCollisionResults();
@@ -110,17 +110,17 @@ public class PeopleController extends Controller
         {
             this.hungryCountDown -= time;
             // si la distance le permet, mange l'autre :)
-            Vector3f length = new Vector3f(this.people.getLovedPeople().getLocalTranslation());
-            length.subtract(this.people.getLocalTranslation());
-            if(length.length() <= 50)
+            float length = this.people.getLovedPeople().getLocalTranslation()
+                .distance(this.people.getLocalTranslation());            
+            if(length <= 10)
             {
                 // s'il s'est épuisé à se défendre
                 if(this.people.getLovedPeople().getFeeling() == PeopleFeeling.DEAD)
-                {                    
+                {   
                     this.realLife += this.people.getLovedPeople().getChromosome()[People.GENE_LIFE]/2;
                     this.hungryCountDown = 0f;
                 }
-                else
+                else                    
                     this.people.getLovedPeople().setFeeling(PeopleFeeling.DEFENCE);
             }
             else
@@ -147,7 +147,6 @@ public class PeopleController extends Controller
         {
             // perd beaucoup de vie à se défendre si mauvaise défence
             this.realLife -= time*(1-this.people.getChromosome()[People.GENE_DEFENCE]/100f)*100;
-            //System.out.println("aie!");
         }
     }
 
@@ -254,7 +253,7 @@ public class PeopleController extends Controller
 
                 // avant de faire l'amour, on verifit si l'individu a envie de manger :)
                 boolean peopleWantToEat = random.nextFloat() <= 
-                    (this.people.getChromosome()[People.GENE_CANIBAL])/100 - this.realLife/200; 
+                    (this.people.getChromosome()[People.GENE_CANIBAL])/100 - this.realLife/100; 
                 
                 // on calcul la probabilité qu'ils s'aiment :)                            
                 boolean peopleWantToMakeLove = random.nextFloat()*2 <=
@@ -416,11 +415,11 @@ public class PeopleController extends Controller
             // se regarde les yeux dans les yeux
             if(this.people.getLovedPeople() != null)
             {               
-                /*Quaternion q = new Quaternion(this.people.getLocalRotation());
+                //Quaternion q = new Quaternion(this.people.getLocalRotation());
                 this.people.lookAt(this.people.getLovedPeople().getLocalTranslation(),
                         this.people.getLocalTranslation());
 
-                float newAngleZ = this.people.getLocalRotation().toAngleAxis(axis);
+                /*float newAngleZ = this.people.getLocalRotation().toAngleAxis(axis);
                 float angleZ = q.toAngleAxis(axis);
                 this.people.setLocalRotation(new Quaternion(q));
                 q.fromAngleAxis(newAngleZ-angleZ, axis);
@@ -433,11 +432,11 @@ public class PeopleController extends Controller
             // se troune vers l'individu pour le pourchasser
             if(this.people.getLovedPeople() != null)
             {               
-                /*Quaternion q = new Quaternion(this.people.getLocalRotation());
+                //Quaternion q = new Quaternion(this.people.getLocalRotation());
                 this.people.lookAt(this.people.getLovedPeople().getLocalTranslation(),
                         this.people.getLocalTranslation());
 
-                float newAngleZ = this.people.getLocalRotation().toAngleAxis(axis);
+                /*float newAngleZ = this.people.getLocalRotation().toAngleAxis(axis);
                 float angleZ = q.toAngleAxis(axis);
                 this.people.setLocalRotation(new Quaternion(q));
                 q.fromAngleAxis(newAngleZ-angleZ, axis);
@@ -445,45 +444,52 @@ public class PeopleController extends Controller
             }
         }
         
-        if(this.actualSpeed > 0)
+        if(this.actualSpeed > 0f)
         {        
-            float angleDirection = 0; 
+            float angleDirection = 0f; 
             
             // détermine la nouvelle direction
             if(this.direction == WalkingDirection.RIGHT)
             {
-                angleDirection = time*(2 + this.people.getChromosome()[People.GENE_SPEED]/20f);
+                angleDirection = time*(2f + this.people.getChromosome()[People.GENE_SPEED]/20f);
 
             }
             else if((this.direction == WalkingDirection.LEFT))
             {
-                angleDirection = -time*(2 + this.people.getChromosome()[People.GENE_SPEED]/20f);
+                angleDirection = -time*(2f + this.people.getChromosome()[People.GENE_SPEED]/20f);
             }
-            
+                       
             
             rot.fromAngleNormalAxis(angleDirection, axis);
             people.getLocalRotation().multLocal(rot);
+        
+            Quaternion q = new Quaternion();
+            Vector3f vX;
+            // trouve l'axe X de la personne        
+            // 1ère solution qui dépend trop de la rotation de l'individu 
+            vX = new Vector3f(1,0,0);
+            q = new Quaternion(this.people.getLocalRotation());
+            q.normalize();
+            vX = q.mult(vX);
+            
+            // crée une rotation autour de cet axe X
+            q.fromAngleAxis(this.actualSpeed/1000f, vX);
+            // applique la rotation au vecteur "rayon" de la sphère
+            // et ainsi détermine la position de l'individu
+            this.people.setLocalTranslation(q.mult(this.people.getLocalTranslation()));
+            
+            
+            // détermine l'axe Z de la personne pour qu'elle regarde devant elle (même si et se dirige vers quelqu'un)
+            q = new Quaternion();
+            q.fromAngleAxis(-(float)Math.PI/2f, new Vector3f(this.people.getLocalTranslation()));
+            Vector3f vZ = q.mult(vX);
+            this.people.lookAt(vZ.add(this.people.getLocalTranslation()),
+                    this.people.getLocalTranslation());
+            // applique la même rotation à l'individu autour de son axe X    
+            /*q.fromAngleNormalAxis(this.actualSpeed/1000f, vX.normalize());
+            this.people.getLocalRotation().multLocal(q);*/
+        
         }
-        Quaternion q = new Quaternion();
-        Vector3f vX;
-        // trouve l'axe X de la personne        
-        // 1ère solution qui dépend trop de la rotation de l'individu 
-        vX = new Vector3f(1,0,0);
-        q = new Quaternion(this.people.getLocalRotation());        
-        vX = q.mult(vX);
-        
-        // crée une rotation autour de cet axe X
-        q.fromAngleAxis(this.actualSpeed/1000, vX);
-        // applique la rotation au vecteur "rayon" de la sphère
-        // et ainsi détermine la position de l'individu
-        this.people.setLocalTranslation(q.mult(this.people.getLocalTranslation()));
-        
-        // applique la même rotation à l'individu autour de son axe X
-        vX = new Vector3f(1,0,0);
-        q.fromAngleNormalAxis(this.actualSpeed/1000, vX.normalize());
-        this.people.getLocalRotation().multLocal(q);
-        
-        
         
         // calcul la dimension
         if(this.people.getFeeling() == PeopleFeeling.DEAD)

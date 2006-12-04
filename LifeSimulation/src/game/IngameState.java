@@ -20,6 +20,7 @@ import com.jme.light.LightNode;
 import com.jme.light.PointLight;
 import com.jme.math.Quaternion;
 import com.jme.math.Ray;
+import com.jme.math.Vector2f;
 import com.jme.math.Vector3f;
 import com.jme.scene.CameraNode;
 import com.jme.scene.Node;
@@ -62,8 +63,6 @@ public class IngameState extends CameraGameState
     private Text fpsText;
     
     private Node peopleNode;
-    
-    private Boolean showDebug = false;
         
     @Override
     public void cleanup()
@@ -88,17 +87,6 @@ public class IngameState extends CameraGameState
         loaded = true;
         this.rootNode.updateRenderState();
         this.rootNode.updateGeometricState(0, true);
-        /*new Thread()
-        {
-            @Override
-            public void run()
-            {
-                buildScene();
-                handleActions();
-                loaded = true;
-                super.run();
-            }
-        }.start();*/
     }
     
     private float progress = 0;
@@ -151,15 +139,15 @@ public class IngameState extends CameraGameState
                 float angleY = random.nextFloat() * (float)(Math.PI*4);
                 
                 People people = new People(
-                        random.nextInt(60),
-                        random.nextInt(60),
-                        random.nextInt(60),
-                        random.nextInt(60),
-                        random.nextInt(60),
-                        random.nextInt(60),
-                        random.nextInt(60),
-                        random.nextInt(60),
-                        random.nextInt(60));
+                        30,
+                        30,
+                        30,
+                        30,
+                        30,
+                        30,
+                        30,
+                        30,
+                        30);
                 people.setLocalScale(0);
                 people.setFeeling(PeopleFeeling.BORN);                                
 
@@ -172,9 +160,6 @@ public class IngameState extends CameraGameState
                 q.fromAngles(angleX, 0, angleZ);                
                 q.multLocal(people.getLocalTranslation());
                 people.getLocalRotation().multLocal(q);           
-                /*q.fromAngles(angleX, angleY, angleZ);               
-                people.setLocalTranslation(q.mult(new Vector3f(0,0,60)));
-                people.setLocalRotation(new Quaternion(q));*/                
                 q.fromAngleNormalAxis(angleY, new Vector3f(0,1,0));
                 people.getLocalRotation().multLocal(q);
                 
@@ -238,17 +223,17 @@ public class IngameState extends CameraGameState
                 0,100,0);
         fpsText.setLightCombineMode(LightState.OFF);       
         rootNode.attachChild(fpsText);    
-        helpText1 = Text.createDefaultTextLabel( "helpText1", "[UP][DOWN][LEFT][RIGHT] pour se deplacer," );          
+        helpText1 = Text.createDefaultTextLabel( "helpText1", "" );          
         helpText1.getLocalTranslation().set(
                 0,80,0);
         helpText1.setLightCombineMode(LightState.OFF);       
         rootNode.attachChild(helpText1);    
-        helpText2 = Text.createDefaultTextLabel( "helpText2", "[SPACE] pour tirer, [ESC] pour mettre en pause," );          
+        helpText2 = Text.createDefaultTextLabel( "helpText2", "" );          
         helpText2.getLocalTranslation().set(
                 0,40,0);
         helpText2.setLightCombineMode(LightState.OFF);       
         rootNode.attachChild(helpText2);
-        helpText3 = Text.createDefaultTextLabel( "helpText3", "[RETURN] pour voir les infos de debug" );          
+        helpText3 = Text.createDefaultTextLabel( "helpText3", "" );          
         helpText3.getLocalTranslation().set(
                 0,20,0);
         helpText3.setLightCombineMode(LightState.OFF);       
@@ -294,12 +279,6 @@ public class IngameState extends CameraGameState
         ts.setTexture(textureGrass);
         ts.setEnabled(true);
         
-        /*VertexProgramState vp = DisplaySystem.getDisplaySystem().getRenderer().createVertexProgramState();
-        vp.setParameter(lightPosition, 8);
-        vp.load(getClass().getResource(
-                "ressources/celshaderARB.vp"));
-        vp.setEnabled(true);*/
-        
         MaterialState ms = DisplaySystem.getDisplaySystem().getRenderer().createMaterialState();
         //ms.getEmissive().g = 0.001f;
         ms.getDiffuse().r = 0.2f;
@@ -307,34 +286,17 @@ public class IngameState extends CameraGameState
         ms.getDiffuse().b = 0.2f;
         //ms.getAmbient().g = 0.001f;   
         ms.setEnabled(true);
-        
-        /*CullState cs = DisplaySystem.getDisplaySystem().getRenderer().createCullState();
-        cs.setCullMode(CullState.CS_FRONT);
-        cs.setEnabled(true);
 
-        WireframeState ws = DisplaySystem.getDisplaySystem().getRenderer().createWireframeState();
-        ws.setLineWidth(20.0f);
-        ws.setFace(WireframeState.WS_FRONT);
-        ws.setEnabled(true);*/
         
         // contruit la planète
         planet = new Node("planet");
         rootNode.attachChild(planet);
         Sphere planetSphere = new Sphere("planetSphere", 18, 18, 195);
-        //planetSphere.setRenderState(vp);
         planetSphere.setRenderState(ts);
         planetSphere.setRenderState(ls);
         //planetSphere.setRenderState(ms);        
         planet.attachChild(planetSphere);
-        
-        /*Sphere planetShading = new Sphere("planetSphere", 18, 18, 195);
-        planetShading.setDefaultColor(ColorRGBA.black);
-        planetShading.setRenderState(cs);
-        planetShading.setRenderState(ws);
-        planet.attachChild(planetShading);
-        
-        planet.setLightCombineMode(LightState.OFF);*/    
-        
+                
         /*Quaternion q = new Quaternion();
         q.fromAngleAxis((float)Math.PI/2f, new Vector3f(1,0,0));        
         planet.getLocalRotation().multLocal(q);*/
@@ -372,17 +334,7 @@ public class IngameState extends CameraGameState
 	 */
 	private void handleActions()
 	{       
-		input.addAction(new InputAction()
-        {
-            public void performAction(InputActionEvent evt)
-            {
-                showDebug = !showDebug;
-            }
-
-        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_RETURN,
-                InputHandler.AXIS_NONE, false);              
-        
-        input.addAction(new InputAction()
+	    input.addAction(new InputAction()
         {
             public void performAction(InputActionEvent evt)
             {
@@ -502,17 +454,22 @@ public class IngameState extends CameraGameState
             {
             	 if( MouseInput.get().isButtonDown(0))
             	 {
-                     Vector3f x = new Vector3f(mouseNode.getLocalTranslation().x-DisplaySystem.getDisplaySystem().getRenderer().getWidth()/2f,0,0);
+                     //System.out.println("mouse:"+mouseNode.getLocalTranslation());
+                     /*Vector3f x = new Vector3f(mouseNode.getLocalTranslation().x-DisplaySystem.getDisplaySystem().getRenderer().getWidth()/2f,0,0);
                      Vector3f y = new Vector3f(0,mouseNode.getLocalTranslation().y-DisplaySystem.getDisplaySystem().getRenderer().getHeight()/2f,0);
                      x = cameraNode.getLocalRotation().mult(x);
-                     y = cameraNode.getLocalRotation().mult(y);
+                     y = cameraNode.getLocalRotation().mult(y);*/
                      /*Vector3f location = new Vector3f(cameraNode.getLocalTranslation());
                      location.z += mouseNode.getLocalTranslation().y;
                      location.x += mouseNode.getLocalTranslation().x;
                      ray = new Ray(location, getCamera().getDirection());*/
-                     ray = new Ray(
+                     /*ray = new Ray(
                              cameraNode.getLocalTranslation().add(x).add(y),
-                             cameraNode.getLocalTranslation().negate()); // camera direction is already normalized                     
+                             cameraNode.getLocalTranslation().negate()); // camera direction is already normalized*/                     
+                     //ray = new Ray(getCamera().getWorldCoordinates(new Vector2f, zPos), getCamera().getDirection())
+                     /*System.out.println("world"+getCamera().getWorldCoordinates(
+                             new Vector2f(mouseNode.getLocalTranslation().x,
+                                          mouseNode.getLocalTranslation().y), cameraNode.getLocalTranslation().z));*/
                      pickResults.setCheckDistance(true);
                      rootNode.findPick(ray,pickResults);
             	 }
@@ -544,6 +501,8 @@ public class IngameState extends CameraGameState
     {
         return fps;
     }
+    
+    private People selected = null;
        
     @Override
     protected void stateUpdate(float tpf)
@@ -576,25 +535,22 @@ public class IngameState extends CameraGameState
         elapsedFrame = 0.0f;
         stateTime = 0.0f;
                 
-        
-        
-        /*if(pickResults.getNumber() > 0)
+                
+        if(pickResults.getNumber() > 0)
         {
+            if(this.selected != null)
+                this.selected.setSelected(false);
+            
         	Node source = pickResults.getPickData(0)
                     .getTargetMesh().getParentGeom().getParent().getParent();
         	if(source instanceof People)
         	{
-        		People selected = (People)source;
-        		helpText3.print("Selected => life="+selected.getChromosome()[People.GENE_LIFE]+
-        				" speed="+selected.getChromosome()[People.GENE_SPEED]+
-                        " prolific="+selected.getChromosome()[People.GENE_PROLIFIC]);
+                this.selected = (People)source;     
+                this.selected.setSelected(true);
+                System.out.println("caca");
         	}
-            else
-                helpText3.print("");
         }
-        else
-            helpText3.print("");
-        pickResults.clear();*/
+        pickResults.clear();
         
         // maladie HAHAHA!
         /*if(fps < 20f && elapsedVirusTime > 2f)
@@ -650,7 +606,7 @@ public class IngameState extends CameraGameState
         }*/
         helpText1.print("nb individu : "+peopleNode.getQuantity());
         helpText2.print("elapsed time : "+(int)elapsedTime/60+"min "+(int)elapsedTime%60+"sec");
-        //helpText3.print("");
+        helpText3.print("[UP][DOWN][LEFT][RIGHT] pour déplacer la caméra, [NUMPAD_+][NUMPAD_-] pour zoomer");
         fpsText.print("fps : "+fps);                     
         
         super.stateUpdate(tpf);
@@ -676,10 +632,6 @@ public class IngameState extends CameraGameState
     {            	
         elapsedFrame++;
         DisplaySystem.getDisplaySystem().getRenderer().clearBuffers();
-        /*if(showDebug)
-        {
-            PhysicsDebugger.drawPhysics( physicsSpace, DisplaySystem.getDisplaySystem().getRenderer() );
-        }*/
         super.stateRender(tpf);        
     }
 
