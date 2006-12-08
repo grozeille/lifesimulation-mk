@@ -18,11 +18,18 @@ public class MenuState extends CameraGameState
     private Text menuQuitText;
     private Text menuPeopleText;
     private Text menuLogText;
+    private Text menuRandomText;
     
     private Integer nbPeople = 50;
     public Integer getNbPeople()
     {
         return nbPeople;
+    }
+    
+    private Boolean randomGene = false;
+    public Boolean getRandomGene()
+    {
+        return randomGene;
     }
     
     private Boolean startGame = false;
@@ -59,9 +66,15 @@ public class MenuState extends CameraGameState
         menuLogText.setLightCombineMode(LightState.OFF);
         rootNode.attachChild(menuLogText);
         
+        menuRandomText = Text.createDefaultTextLabel( "menuRandomText", "" );          
+        menuRandomText.getLocalTranslation().set(
+                40,DisplaySystem.getDisplaySystem().getHeight()/2-60,0);
+        menuRandomText.setLightCombineMode(LightState.OFF);
+        rootNode.attachChild(menuRandomText);
+        
         menuQuitText = Text.createDefaultTextLabel( "menuQuitText", "" );          
         menuQuitText.getLocalTranslation().set(
-                40,DisplaySystem.getDisplaySystem().getHeight()/2-90,0);
+                40,DisplaySystem.getDisplaySystem().getHeight()/2-100,0);
         menuQuitText.setLightCombineMode(LightState.OFF);
         rootNode.attachChild(menuQuitText);
         
@@ -77,6 +90,7 @@ public class MenuState extends CameraGameState
     {
         input.update(tpf);
         menuLogText.print("[L] log : "+(StatLogger.GetInstance().isEnable()?"True":"False"));
+        menuRandomText.print("[R] Random gene : "+(randomGene?"True":"False"));
         menuPeopleText.print("[UP][DOWN] pour changer le nombre d'individu : "+nbPeople);
         menuStartText.print("[RETURN] to start a new game");        
         menuQuitText.print("[ESC] to quit");
@@ -107,6 +121,16 @@ public class MenuState extends CameraGameState
             }
 
         }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_RETURN,
+                InputHandler.AXIS_NONE, false);
+        input.addAction(new InputAction()
+        {
+            public void performAction(InputActionEvent evt)
+            {
+                if(!evt.getTriggerPressed())
+                    randomGene = !randomGene;
+            }
+
+        }, InputHandler.DEVICE_KEYBOARD, KeyInput.KEY_R,
                 InputHandler.AXIS_NONE, false);
         input.addAction(new InputAction()
         {

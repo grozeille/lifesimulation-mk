@@ -9,7 +9,8 @@
     </path>
 
 	<property name="releaseDir" location="E:/traveaux/SVN/lifesimulationtrac/download" />	
-	<property name="version" value="beta2" />
+	<property name="version" value="beta3" />
+	<property name="groovyPlugin" location="E:/eclipse/plugins/org.codehaus.groovy.eclipse_1.0.0.20060915/lib" />
 	
 	<target name="compile" description="compilation">
 		<javac source="1.5" target="1.5"
@@ -23,6 +24,10 @@
 	</target>
 
 	<target name="prepare" depends="compile" description="créer le JAR">
+		<mkdir dir="./target" />
+		<mkdir dir="./target/lib" />
+		<mkdir dir="./target/scripts" />
+		
 		<copy todir="./target/lib">
 			<fileset dir="../jme/lib">
 				<include name="**/*jar" />
@@ -30,6 +35,15 @@
 			<fileset dir="../jme/target">
 				<include name="**/*jar" />
 			</fileset>			
+			<fileset dir="${groovyPlugin}">
+				<include name="**/*jar" />
+			</fileset>
+		</copy>
+			
+		<copy todir="./target/scripts">
+			<fileset dir="./scripts">
+				<include name="**/*groovy" />
+			</fileset>
 		</copy>
 			
 		<copy todir="./target">
@@ -38,7 +52,19 @@
 			</fileset>
 		</copy>
 
-		<jar jarfile="target/LifeSimulation.jar" basedir="./bin" update="no" compress="false" includes="**/*.class, **/*.jme, **/*.png" />
+		<jar jarfile="target/LifeSimulation.jar" 
+			update="no" 
+			compress="false" 
+			basedir="./bin"
+			includes="**/*.class, **/*.jme, **/*.png"
+			manifest="./META-INF/MANIFEST.MF" />		
+		
+		<delete>
+			<fileset dir="./target">
+				<include name="**/*txt" />
+				<include name="**/*cfg" />
+			</fileset>
+		</delete>
 	</target>
 	
 	<target name="buildExe" depends="prepare" description="crée un .EXE">		
@@ -48,6 +74,7 @@
 	</target>
 	
 	<target name="release" depends="buildExe" description="livre la version">
+		<mkdir dir="${releaseDir}/${version}"/>
 		<zip  destfile="${releaseDir}/${version}/${version}.zip">
 			<fileset dir="./target">
 				<include name="**/*" />

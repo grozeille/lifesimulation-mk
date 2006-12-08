@@ -3,9 +3,15 @@ package model;
 import game.DeathCause;
 import game.IngameState;
 import game.StatLogger;
+import groovy.lang.GroovyClassLoader;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Random;
+
+import org.codehaus.groovy.control.CompilationFailedException;
 
 import com.jme.math.Quaternion;
 import com.jme.math.Vector3f;
@@ -70,6 +76,31 @@ public class PeopleController extends Controller
         rot = new Quaternion();  
         axis = new Vector3f(people.getLocalTranslation()).normalizeLocal();
         //collisionResults = new BoundingCollisionResults();
+        GroovyClassLoader gcl = new GroovyClassLoader(getClass().getClassLoader());
+        //URL url = getClass().getClassLoader().getResource("src/scripts/PeopleGenotype.groovy");
+        try
+        {
+            //Class clazz = gcl.parseClass(url.openStream());
+            Class clazz = gcl.parseClass(new File("scripts/PeopleGenotype.groovy"));
+            Object aScript = clazz.newInstance();
+            this.peopleGenotype = (IPeopleGenotype) aScript;
+        } catch (CompilationFailedException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InstantiationException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalAccessException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
     
     private float stateTime = 0;
@@ -77,7 +108,7 @@ public class PeopleController extends Controller
     private float sickTime = 0;    
     
     public void update(float time)
-    {   
+    {           
         stateTime += time;
         if(stateTime < 0.5f)
             return;
@@ -329,6 +360,8 @@ public class PeopleController extends Controller
         }
     }
 
+    private IPeopleGenotype peopleGenotype;
+    
     /**
      * calcul les déplacements de l'individu
      * @param time
@@ -336,10 +369,10 @@ public class PeopleController extends Controller
     private void updateMove(float time)
     {
         // détermine la vitesse de l'individu
-        float speed = 
-            (((people.getChromosome()[People.GENE_SPEED]+10f)/2f) * 
+        float speed = peopleGenotype.GetSpeed(this.people, time);
+            /*(((people.getChromosome()[People.GENE_SPEED]+10f)/2f) * 
              (this.people.getChromosome()[People.GENE_CURIOUS]/100f)
-             )/2f * time*100f;
+             )/2f * time*100f;*/
            
         // si l'individu est amoureux (et décide de copuler) il se dirige vers la personne désirée
         if(this.people.getFeeling() == PeopleFeeling.LOVE || 

@@ -7,8 +7,8 @@ public class PeopleFactory extends Thread
 {
     public static float GESTATION_COUNTDOWN_MAX = 6f; // 6 secondes de gestation
     
-    private People dad;
-    private People mom;    
+    private IPeople dad;
+    private IPeople mom;    
     
     private People child = null;
     public synchronized People getChild()
@@ -16,7 +16,7 @@ public class PeopleFactory extends Thread
         return child;
     }
     
-    public PeopleFactory(People dad, People mom)
+    public PeopleFactory(IPeople dad, IPeople mom)
     {
         this.dad = dad;
         this.mom = mom;

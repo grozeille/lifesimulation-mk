@@ -27,6 +27,9 @@
 <classPath>target\lib\lwjgl_util.jar</classPath>
 <classPath>target\lib\lwjgl_util_applet.jar</classPath>
 <classPath>target\lib\native-mac.jar</classPath>
+<classPath>target\lib\commons-io-1.2.jar</classPath>
+<classPath>target\lib\commons-lang-2.1.jar</classPath>
+<classPath>target\lib\groovy-all-1.0-JSR-06.jar</classPath>
 <currentDirectory>target</currentDirectory>
 <embeddedJar>true</embeddedJar>
 <executableName>target\LifeSimulation.exe</executableName>

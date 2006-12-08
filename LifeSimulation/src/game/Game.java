@@ -90,7 +90,7 @@ public class Game extends VariableTimestepGame
         {                       
             TransitionGameState transitionState = new TransitionGameState(null);
             GameStateManager.getInstance().attachChild(transitionState);                        
-            ingameState = new IngameState("ingame", menuState.getNbPeople(), transitionState);
+            ingameState = new IngameState("ingame", menuState.getNbPeople(), menuState.getRandomGene());
             GameStateManager.getInstance().attachChild(ingameState);
             menuState.setActive(false);
             //transitionState.setActive(true);

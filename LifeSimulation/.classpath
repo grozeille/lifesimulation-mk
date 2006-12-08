@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/jme"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry path="src" kind="src">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="LifeSimulation/src"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry path="org.eclipse.jdt.launching.JRE_CONTAINER" kind="con"/>
+	<classpathentry path="/jme" combineaccessrules="false" kind="src"/>
+	<classpathentry path="E:/eclipse/plugins/org.codehaus.groovy.eclipse_1.0.0.20060915/lib/commons-io-1.2.jar" exported="true" kind="lib"/>
+	<classpathentry path="E:/eclipse/plugins/org.codehaus.groovy.eclipse_1.0.0.20060915/lib/commons-lang-2.1.jar" exported="true" kind="lib"/>
+	<classpathentry path="E:/eclipse/plugins/org.codehaus.groovy.eclipse_1.0.0.20060915/lib/groovy-all-1.0-JSR-06.jar" exported="true" kind="lib"/>
+	<classpathentry path="bin-groovy" exported="true" kind="lib"/>
+	<classpathentry path="bin" kind="output"/>
 </classpath>

@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 
+import model.IPeople;
 import model.People;
 
 import com.jme.scene.Spatial;
@@ -59,7 +60,7 @@ public class StatLogger
         {
             if(s instanceof People)
             {
-                People p = (People)s;
+                IPeople p = (IPeople)s;
                 if(p != null)
                 {
                     carac[0] += p.getChromosome()[People.GENE_LIFE];

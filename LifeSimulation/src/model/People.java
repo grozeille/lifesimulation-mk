@@ -11,6 +11,7 @@ import com.jme.scene.BillboardNode;
 import com.jme.scene.Node;
 import com.jme.scene.shape.Quad;
 import com.jme.scene.state.AlphaState;
+import com.jme.scene.state.CullState;
 import com.jme.scene.state.LightState;
 import com.jme.scene.state.MaterialState;
 import com.jme.scene.state.RenderState;
@@ -18,7 +19,7 @@ import com.jme.scene.state.TextureState;
 import com.jme.system.DisplaySystem;
 import com.jme.util.TextureManager;
 
-public class People extends Node
+public class People extends Node implements IPeople
 {
     private static final long serialVersionUID = -4433386920425680300L;
 
@@ -100,7 +101,12 @@ public class People extends Node
                 "/ressources/face-laughing.png"), Texture.MM_LINEAR,
                 Texture.FM_LINEAR);
         
-
+        CullState cs = DisplaySystem.getDisplaySystem().getRenderer()
+                .createCullState();
+        cs.setCullMode(CullState.CS_BACK);
+        cs.setEnabled(true);
+        this.setRenderState(cs);
+        
         ts = DisplaySystem.getDisplaySystem().getRenderer()
                 .createTextureState();
         AlphaState as = DisplaySystem.getDisplaySystem().getRenderer()
@@ -163,26 +169,11 @@ public class People extends Node
 
     private Node model;
 
-    private Float[] chromosome = new Float[9];
+    private Float[] chromosome = new Float[9];    
 
-    public static Integer GENE_LIFE = 0;
-
-    public static Integer GENE_CURIOUS = 1;
-
-    public static Integer GENE_SPEED = 2;
-
-    public static Integer GENE_SENSIBILITY = 3;
-
-    public static Integer GENE_FEAR = 4;
-
-    public static Integer GENE_PROLIFIC = 5;
-
-    public static Integer GENE_CANIBAL = 6;
-
-    public static Integer GENE_CHARMING = 7;
-
-    public static Integer GENE_DEFENCE = 8;
-
+    /* (non-Javadoc)
+     * @see model.IPeople#getChromosome()
+     */
     public Float[] getChromosome()
     {
         return this.chromosome;
@@ -194,6 +185,9 @@ public class People extends Node
 
     private Quad messageBox;
 
+    /* (non-Javadoc)
+     * @see model.IPeople#getFeeling()
+     */
     public PeopleFeeling getFeeling()
     {
         return feeling;
@@ -204,6 +198,9 @@ public class People extends Node
         return model;
     }
 
+    /* (non-Javadoc)
+     * @see model.IPeople#setFeeling(model.PeopleFeeling)
+     */
     public void setFeeling(PeopleFeeling feeling)
     {
         this.feeling = feeling;
@@ -228,11 +225,17 @@ public class People extends Node
         this.updateRenderState();
     }
 
+    /* (non-Javadoc)
+     * @see model.IPeople#getLovedPeople()
+     */
     public People getLovedPeople()
     {
         return lovedPeople;
     }
 
+    /* (non-Javadoc)
+     * @see model.IPeople#setLovedPeople(model.People)
+     */
     public void setLovedPeople(People lovedPeople)
     {
         this.lovedPeople = lovedPeople;
